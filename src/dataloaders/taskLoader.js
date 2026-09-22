@@ -1,5 +1,6 @@
 import DataLoader from "dataloader";
 import { Task } from "../models/Task.js";
+import { use } from "react";
 
 export const createTaskLoader = () => {
   return new DataLoader(async (userIds) => {
@@ -8,8 +9,16 @@ export const createTaskLoader = () => {
         $in: userIds,
       },
     });
-    return userIds.map((userId) =>
-      tasks.filter((task) => task.userId.toString() === userId.toString()),
-    );
+    const taskMap = new Map();
+
+    for (const task of tasks) {
+      const userId = task.userId.toString();
+      if (!taskMap.has(userId)) {
+        taskMap.set(userId, []);
+      }
+      taskMap.get(userId).push(task);
+    }
+
+    return userIds.map((userId) => taskMap.get(userId.toString()) ?? []);
   });
 };

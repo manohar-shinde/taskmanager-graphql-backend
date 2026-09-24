@@ -21,6 +21,10 @@ export const typeDefs = `
 		userId : ID!
 		user : User
 	  }
+	
+	  type Subscription {
+	 	taskCreated: Task! 
+	  }
 	  
 	  type TaskPage {
 		tasks : [Task!]!

@@ -5,9 +5,13 @@ import jwt from "jsonwebtoken";
 import { requireAuth, requireOwnership } from "../utils/auth.js";
 import * as taskService from "../services/taskService.js";
 import * as userService from "../services/userService.js";
+import { pubsub, TASK_CREATED, withFilter } from "./pubsub.js";
 
 export const resolvers = {
   Query: {
+    users: async () => {
+      return await User.find();
+    },
     me: async (_, args, context) => {
       const user = requireAuth(context);
       return await User.findById(user.userId);
@@ -130,10 +134,14 @@ export const resolvers = {
     // Tasks
     createTask: async (_, args, context) => {
       const user = requireAuth(context);
-      return await taskService.createTask({
+      const task = await taskService.createTask({
         title: args.input.title,
         userId: user.userId,
       });
+      await pubsub.publish(TASK_CREATED, {
+        taskCreated: task,
+      });
+      return task;
     },
 
     updateTask: async (parent, args, context) => {
@@ -156,6 +164,21 @@ export const resolvers = {
       }
       requireOwnership(deletedTask.userId, user.userId);
       return await taskService.deleteTask(args.id);
+    },
+  },
+  Subscription: {
+    taskCreated: {
+      subscribe: withFilter(
+        () => pubsub.asyncIterableIterator([TASK_CREATED]),
+
+        (payload, _, context) => {
+          if (!context.user) {
+            return false;
+          }
+
+          return payload.taskCreated.userId.toString() === context.user.userId;
+        },
+      ),
     },
   },
 };

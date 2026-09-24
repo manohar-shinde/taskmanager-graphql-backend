@@ -1,4 +1,5 @@
 import { Task } from "../models/Task.js";
+import { ObjectId } from "mongoose";
 
 export const createTask = async ({ title, userId }) => {
   return await Task.create({
@@ -7,7 +8,7 @@ export const createTask = async ({ title, userId }) => {
   });
 };
 
-export const getTaskById = async ({ id }) => {
+export const getTaskById = async (id) => {
   return await Task.findById(id);
 };
 
